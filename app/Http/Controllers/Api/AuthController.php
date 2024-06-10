@@ -108,7 +108,7 @@ class AuthController extends Controller
         ]);
         $data = $validator->validated();
         try{
-            $disk = Storage::disk('local');
+            $disk = Storage::disk('gcs');
             $file = $disk->put('user', $request->file('picture'));
             if($file) {
                 $path = '/storage/'.$file;

@@ -56,7 +56,7 @@ class ArticleController extends Controller
 	    }
 	    $data = $validator->validated();
         try{
-            $disk = Storage::disk('local');
+            $disk = Storage::disk('gcs');
             $file = $disk->put('article', $request->file('image'));
             if($file) {
                 $path = '/storage/'.$file;
@@ -85,7 +85,7 @@ class ArticleController extends Controller
 	    }
 	    $data = $validator->validated();
         try{
-            $disk = Storage::disk('local');
+            $disk = Storage::disk('gcs');
             $file = $disk->put('article', $request->file('image'));
             if($file) {
                 $path = '/storage/'.$file;

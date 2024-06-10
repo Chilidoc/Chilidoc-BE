@@ -45,7 +45,7 @@ class HistoryController extends Controller
 	    }
 	    $data = $validator->validated();
         try{
-            $disk = Storage::disk('local');
+            $disk = Storage::disk('gcs');
             $file = $disk->put('history', $request->file('image'));
             if($file) {
                 $path = '/storage/'.$file;

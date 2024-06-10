@@ -13,9 +13,9 @@ use \Auth;
 class ArticleController extends Controller
 {
     public function index(Request $request) {
-        $data = Article::all();
-        return ResponseHelper::sendResponse($data, 'Article Berhasil diBuat!', 200);
         try{
+            $data = Article::all();
+            return ResponseHelper::sendResponse($data, 'Article Berhasil diBuat!', 200);
         }catch(\Exception $ex){
            return ResponseHelper::throw($ex);
         }

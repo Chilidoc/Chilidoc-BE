@@ -47,4 +47,14 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    protected $appends = ['picture_url'];
+
+    public function getPictureUrlAttribute() {
+        $hostname = env('GOOGLE_CLOUD_STORAGE_HOSTNAME', '');
+        if($this->picture) {
+            return $hostname . $this->picture;
+        }
+        return null;
+    }
 }

@@ -8,4 +8,14 @@ use Illuminate\Database\Eloquent\Model;
 class Article extends Model
 {
     use HasFactory;
+
+    protected $appends = ['image_url'];
+
+    public function getImageUrlAttribute() {
+        $hostname = env('GOOGLE_CLOUD_STORAGE_HOSTNAME', '');
+        if($this->image) {
+            return $hostname . $this->image;
+        }
+        return null;
+    }
 }

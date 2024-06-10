@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use App\Helper\ResponseHelper;
@@ -73,7 +74,7 @@ class AuthController extends Controller
             ];
             return ResponseHelper::sendResponse($response, 'Pendaftaran Berhasil!', 201);
         }catch(\Exception $ex){
-           return ResponseHelper::rollback($ex);
+           return ResponseHelper::throw($ex);
         }
         
     }
@@ -83,7 +84,40 @@ class AuthController extends Controller
             Auth::user()->tokens()->delete();
             return ResponseHelper::sendResponse(null, 'Logout Berhasil!', 200);
         }catch(\Exception $ex){
-           return ResponseHelper::rollback($ex);
+           return ResponseHelper::throw($ex);
+        }
+    }
+    
+    public function updateProfile(Request $request) {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required',
+            'gender' => 'required',
+            'birth_date' => 'required|date',
+            'phone' => 'required',
+            'address' => 'required',
+            'picture' => 'nullable',
+        ], [
+            'name.required' => 'Kolom nama harus diisi!',
+            'gender.required' => 'Kolom jenis kelamin harus diisi!',
+            'birth_date.required' => 'Kolom tanggal lahir harus diisi!',
+            'birth_date.date' => 'Kolom tanggal lahir harus format tanggal!',
+            'phone.required' => 'Kolom telepon harus diisi!',
+            'address.required' => 'Kolom alamat harus diisi!',
+            'picture.image' => 'Kolom foto profil harus berupa gambar!',
+            'picture.max' => 'Gambar harus < 5MB!',
+        ]);
+        $data = $validator->validated();
+        try{
+            $disk = Storage::disk('local');
+            $file = $disk->put('user', $request->file('picture'));
+            if($file) {
+                $path = '/storage/'.$file;
+                $data['picture'] = $path;
+            }
+            $user = User::find(Auth::id())->update($data);
+            return ResponseHelper::sendResponse($user, 'Update profile!', 200);
+        }catch(\Exception $ex){
+           return ResponseHelper::throw($ex);
         }
     }
 }

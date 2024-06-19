@@ -62,7 +62,11 @@ class ArticleController extends Controller
                 $path = '/storage/'.$file;
                 $data['image'] = $path;
             }
-            $article = Article::insert($data);
+            $article = new Article;
+            $article->image = $data['image'];
+            $article->title = $data['title'];
+            $article->content = $data['content'];
+            $article->save();
             return ResponseHelper::sendResponse($article, 'Article Berhasil diBuat!', 200);
         }catch(\Exception $ex){
            return ResponseHelper::throw($ex);

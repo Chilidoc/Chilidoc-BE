@@ -7,8 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use App\Helper\ResponseHelper;
+use App\Helper\PredictHelper;
 use App\Models\History;
 use \Auth;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\RequestException;
 
 class HistoryController extends Controller
 {
@@ -32,28 +35,62 @@ class HistoryController extends Controller
 
     public function create(Request $request) {
         $validator = Validator::make($request->all(), [
-	        'result' => 'required',
 	        'image' => 'required|image|max:5240',
 	    ], [
             'result.required' => 'Kolom hasil harus diisi!',
-            'image.required' => 'Kolom gambar harus diisi!',
-            'image.image' => 'Kolom gambar harus berupa gambar!',
-            'image.max' => 'Gambar harus < 5MB!',
         ]);
 	    if ($validator->fails()) {
             return ResponseHelper::sendError($validator->errors()->all()[0], 422);
 	    }
 	    $data = $validator->validated();
-        try{
+        $image = $request->file('image');
+        $imagePath = $image->getPathname();
+        $imageName = $image->getClientOriginalName();
+
+        $client = new Client();
+
+        $baseUrl = env('MODEL_REST_API');
+
+        $response = $client->request('POST', $baseUrl.'/predict', [
+            'multipart' => [
+                [
+                    'name'     => 'image',
+                    'contents' => fopen($imagePath, 'r'),
+                    'filename' => $imageName,
+                ],
+            ],
+        ]);
+
+        // Get the response body and decode the JSON
+        $responseBody = $response->getBody()->getContents();
+        $predict = json_decode($responseBody, true);
+        if (!empty($predict)) {
+            $desc = $predict['Desc'];
+            $disease = $predict['Disease'];
+            $prevention = $predict['Prevention'];
+            $treatment = $predict['Treatment'];
+
             $disk = Storage::disk('gcs');
             $file = $disk->put('history', $request->file('image'));
             if($file) {
                 $path = '/storage/'.$file;
                 $data['image'] = $path;
             }
-            $data['user_id'] = Auth::id();
-            $history = History::insert($data);
+            $history = new History;
+            $history->user_id = Auth::id();
+            $history->image = $path;
+            $history->result = $desc;
+            $history->disease = $disease;
+            $history->prevention = $prevention;
+            $history->treatment = $treatment;
+            $history->save();
             return ResponseHelper::sendResponse($history, 'History Berhasil diBuat!', 200);
+
+        } else {
+            return ResponseHelper::throw('Error');
+        }
+        try{
+
         }catch(\Exception $ex){
            return ResponseHelper::throw($ex);
         }
